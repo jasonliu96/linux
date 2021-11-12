@@ -46,3 +46,4 @@ The changes to this file included:
 * run: sudo insmod cmpe283-1.ko
 * run: lsmod | grep cmpe283 // this verifys that the module has been loaded in
 * run: dmesg // this shows the output of the module from the system messages. 
+* module outputs are available in the cmpe283 subdirectory
