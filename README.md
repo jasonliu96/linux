@@ -6,7 +6,7 @@ Jason Liu, I worked on this project alone.
 ##### Setting up Environment #####
 * Get ISO from Ubuntu website, version obtained as of this writing: ubuntu-20.04.3-desktop-amd64.iso
 * Create VM on VMware Workstation Beta with the desired specs. 
-* Install necessary packages to create kernel in working environemnt, terminal commands are as followed:
+* Install necessary packages to create kernel in working environment, terminal commands are as followed:
    * sudo apt-get update
    * sudo apt-get dist-upgrade
    * sudo apt-get install fakeroot build-essential crash kexec-tools makedumpfile kernel-wedge
