@@ -23,7 +23,7 @@ Jason Liu, I worked on this project alone.
 * At this point all the necessary packages have been installed 
 * Using git clone, clone the linux fork into the VM
 * use uname -a to figure out the version of the config// mine was 5.11.0-40-generic
-* use command: cp /boot/config-[version]
+* use command: cp /boot/config-[version] .config    //this copys the existing config into working directory. 
 * run: make oldconfig
     * hold enter
 * run: make prepare
