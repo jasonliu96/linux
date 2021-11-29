@@ -1230,11 +1230,26 @@ bool kvm_cpuid(struct kvm_vcpu *vcpu, u32 *eax, u32 *ebx,
 }
 EXPORT_SYMBOL_GPL(kvm_cpuid);
 
-u32 total_exits = 0;
-u64 total_cycles = 0;
+atomic_t total_exits = ATOMIC_INIT(0);
+atomic64_t total_cycles = ATOMIC_INIT(0);
+atomic_t exit_counts[69];
+atomic64_t exit_cycle_counts[69];
 EXPORT_SYMBOL(total_exits);
 EXPORT_SYMBOL(total_cycles);
-
+EXPORT_SYMBOL(exit_counts);
+EXPORT_SYMBOL(exit_cycle_counts);
+int check_ecx_val(u32 ecx){
+	// exits not defined in sdm 
+	if(ecx < 0x0 ||ecx == 0x23 || ecx == 0x26 || ecx == 0x2A || ecx == 0x41 || ecx > 0x44){
+		return 1;
+	} 
+	// exits not supported by kvm 
+	else if (ecx == 0x3 || ecx == 0x4 || ecx == 0x5 || ecx == 0x6 || ecx == 0xB || ecx == 0x10 || ecx == 0x11 ||
+			ecx == 0x21 || ecx == 0x22 || ecx == 0x33 || ecx == 0x3F || ecx == 0x40 || ecx == 0x42 || ecx == 0x43 || ecx == 0x44){
+		return 2;
+	}
+	else return 0;
+}
 int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 {
 	u32 eax, ebx, ecx, edx;
@@ -1245,19 +1260,40 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	ecx = kvm_rcx_read(vcpu);
 	
 	if(eax == 0x4fffffff){
-		eax = total_exits; 
+		eax = atomic_read(&total_exits); 
 	} 
 	else if(eax == 0x4ffffffe){
-		ebx = (u32)(total_cycles>>32);
-		ecx = (u32)total_cycles;
+		ebx = (u32)(atomic64_read(&total_cycles)>>32);
+		ecx = (u32)(atomic64_read(&total_cycles));
 		//ebx = hi32
 		//ecx = low32
 	}
 	else if(eax == 0x4ffffffd){
-		eax = 0x3;
+		switch(check_ecx_val(ecx)){
+		case 1:
+			eax=ebx=ecx=0;
+			edx=0xffffffff;
+			break;
+		case 2:
+			eax=ebx=ecx=edx=0;
+			break;
+		default:
+			eax = (u32)(atomic_read(&exit_counts[ecx]));	
+		}
 	}
 	else if(eax == 0x4ffffffc){
-		eax = 0x4;
+		switch(check_ecx_val(ecx)){
+		case 1:
+			eax=ebx=ecx=0;
+			edx=0xffffffff;
+			break;
+		case 2:
+			eax=ebx=ecx=edx=0;
+			break;
+		default:
+			ebx = (u32)(atomic64_read(&exit_cycle_counts[ecx])>>32);
+			ecx = (u32)(atomic64_read(&exit_cycle_counts[ecx]));
+		}
 	}
 	else {
 		kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, false);

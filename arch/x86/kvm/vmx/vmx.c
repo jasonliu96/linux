@@ -5912,10 +5912,14 @@ void dump_vmcs(struct kvm_vcpu *vcpu)
 		       vmcs_read16(VIRTUAL_PROCESSOR_ID));
 }
 
-
-extern u32 total_exits;
-extern u64 total_cycles;
-
+// total_exits incremented for every call to kvm's vmx_handle_exit
+// total_cycles total cpu cycles for time spent in exit handler
+// exit_counts[] array counting exits index by exit number
+// exit_cycle_counts[] array counting cycles index by exit number 
+extern atomic_t total_exits; 
+extern atomic64_t total_cycles;
+extern atomic_t exit_counts[];
+extern atomic64_t exit_cycle_counts[];
 /*
  * The guest has exited.  See if we can fix it or if we need userspace
  * assistance.
@@ -5927,7 +5931,8 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	u32 vectoring_info = vmx->idt_vectoring_info;
 	u16 exit_handler_index;
 	
-	total_exits ++;
+	u64 start = rdtsc();
+	atomic_inc(&total_exits);
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
@@ -6043,6 +6048,12 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 			vmx->loaded_vmcs->soft_vnmi_blocked = 0;
 		}
 	}
+	//increment exit_counts array 
+
+	atomic_inc(&exit_counts[exit_reason.basic]);
+	//increment exit_cycle_counts array
+	atomic64_add((rdtsc()-start),&exit_cycle_counts[exit_reason.basic]);
+	//exit_cycle_counts[exit_reason.basic] += (rdtsc()- start);
 
 	if (exit_fastpath != EXIT_FASTPATH_NONE)
 		return 1;
@@ -6063,12 +6074,13 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	else if (exit_reason.basic == EXIT_REASON_EPT_MISCONFIG)
 		return handle_ept_misconfig(vcpu);
 #endif
-
+	
 	exit_handler_index = array_index_nospec((u16)exit_reason.basic,
 						kvm_vmx_max_exit_handlers);
 	if (!kvm_vmx_exit_handlers[exit_handler_index])
 		goto unexpected_vmexit;
-
+		
+	
 	return kvm_vmx_exit_handlers[exit_handler_index](vcpu);
 
 unexpected_vmexit:
@@ -6090,8 +6102,8 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	u64 start;
 	start = rdtsc();
 	ret = __vmx_handle_exit(vcpu, exit_fastpath);
-
-	total_cycles += (rdtsc()-start);
+	atomic64_add((rdtsc()-start), &total_cycles);
+	//total_cycles += (rdtsc()-start);
 	/*
 	 * Exit to user space when bus lock detected to inform that there is
 	 * a bus lock in guest.
