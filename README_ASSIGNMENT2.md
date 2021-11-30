@@ -39,3 +39,8 @@ I worked alone on this assignment // research required involved looking up how t
 * use command: sudo make INSTALL_MOD_STRIP=1 modules_install 
 * use command: sudo reboot // this step here might be unneeded but my inner VM was not registering module updates without this step 
 * run test file inside the nested vm 
+*Added 11/39/2021*
+#### Output 
+Edits to the previous code include changing globals to their atomic counterparts. 
+![image](https://user-images.githubusercontent.com/11416306/143965414-1ddf8c65-ed50-4a06-9875-f412d597ba79.png)
+
