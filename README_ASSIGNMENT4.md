@@ -3,7 +3,7 @@
 I worked alone on this project. 
 ## Q2 
 #### with EPT 
-*full output listed below* 
+*full output listed below* \
 Number of Exits: 3965260	Number of Cycles: 59111170947\
 Exit 0 Value in eax register is: 26853\
 Exit 1 Value in eax register is: 87495\
