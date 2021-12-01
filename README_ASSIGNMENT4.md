@@ -3,6 +3,7 @@
 I worked alone on this project. 
 ## Q2 
 #### with EPT 
+*full output listed below* 
 Number of Exits: 3965260	Number of Cycles: 59111170947\
 Exit 0 Value in eax register is: 26853\
 Exit 1 Value in eax register is: 87495\
@@ -20,7 +21,7 @@ Exit 47 Value in eax register is: 63\
 Exit 48 Value in eax register is: 1944236\
 Exit 49 Value in eax register is: 71709\
 Exit 54 Value in eax register is: 27\
-Exit 55 Value in eax register is: 27\
+Exit 55 Value in eax register is: 27
 
 #### Without EPT 
 Number of Exits: 13773494	Number of Cycles: 173149593545\
@@ -42,11 +43,18 @@ Exit 48 Value in eax register is: 1955089\
 Exit 49 Value in eax register is: 72761\
 Exit 54 Value in eax register is: 31\
 Exit 55 Value in eax register is: 36\
-Exit 58 Value in eax register is: 147223\
+Exit 58 Value in eax register is: 147223
 
 ## Q3
+There was a an increase in exit counts by a bit over a factor of 3; the number of cycles also increased by around a factor of 3. This was expected since the 'ept=0' operation forces the inner vm to operate on shadow paging instead of nested paging. Shadow paging is also associated with a higher overhead so a direct translation to more exits makes sense. 
 
 ## Q4
+Ept = 0 sets the number of extended page tables to zero, this means that instead of nested paging the use of shadow paging is forced. Shadow paging uses exits for tlb flush as well as page faults and due to the number of required hits between the virtual page table, shadow page table, and tlb this leads to much more oportunities for exits to occur. 
+The visible changes besides the increase in exits between ept vs no-ept is that for the no-ept there are also exits for code 58 and 14.  
+Exit Code 14: INVLPG - invalid TLB entries 
+Exit Code 58: INVPIC - Invalidate Process-Context Identifier
+Since we are no longer operating with nested page and switching to shadow paging it appears that the vmm uses the INVLPG exit to mark any entries for memory locations in the active table as not present. 
+
 
 #### Full Output 
 #### with EPT 
@@ -119,7 +127,7 @@ Exit 64 Value in eax register is: 0\
 Exit 65 Value in eax register is: 0\
 Exit 66 Value in eax register is: 0\
 Exit 67 Value in eax register is: 0\
-Exit 68 Value in eax register is: 0\
+Exit 68 Value in eax register is: 0
 
 #### Without EPT 
 Number of Exits: 13773494	Number of Cycles: 173149593545\
